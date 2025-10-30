@@ -38,7 +38,7 @@ const TaskColumn = ({ stage, onEditTask }) => {
       </div>
 
       {/* Task List */}
-      <div className="space-y-3 min-h-[400px] lg:min-h-[500px]">
+      <div className="space-y-2 min-h-[400px] lg:min-h-[500px]">
         <SortableContext items={tasks.map(task => task.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
             <DraggableTaskCard key={task.id} task={task} onEdit={onEditTask} />
