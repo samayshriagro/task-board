@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useTaskStore, TASK_STAGES, PRIORITIES } from '../store/taskStoreSupabase';
-import { validateDateRange, formatDateForInput } from '../utils/dateUtils';
+import { validateDateRange, formatDateForInput, parseDateInput, isValidDateFormat } from '../utils/dateUtils';
 
 const TaskModal = ({ isOpen, onClose, task = null }) => {
   const { addTask, updateTask } = useTaskStore();
@@ -55,8 +55,22 @@ const TaskModal = ({ isOpen, onClose, task = null }) => {
       newErrors.owner = 'Owner is required';
     }
 
-    if (formData.startDate && formData.endDate) {
-      if (!validateDateRange(formData.startDate, formData.endDate)) {
+    // Validate date formats
+    if (formData.startDate && !isValidDateFormat(formData.startDate)) {
+      newErrors.startDate = 'Please enter date in DD/MM/YYYY format';
+    }
+
+    if (formData.endDate && !isValidDateFormat(formData.endDate)) {
+      newErrors.endDate = 'Please enter date in DD/MM/YYYY format';
+    }
+
+    // Validate date range if both dates are valid
+    if (formData.startDate && formData.endDate && 
+        isValidDateFormat(formData.startDate) && isValidDateFormat(formData.endDate)) {
+      const startDateISO = parseDateInput(formData.startDate);
+      const endDateISO = parseDateInput(formData.endDate);
+      
+      if (startDateISO && endDateISO && !validateDateRange(startDateISO, endDateISO)) {
         newErrors.endDate = 'End date must be after start date';
       }
     }
@@ -74,8 +88,8 @@ const TaskModal = ({ isOpen, onClose, task = null }) => {
 
     const taskData = {
       ...formData,
-      startDate: formData.startDate || null,
-      endDate: formData.endDate || null
+      startDate: formData.startDate ? parseDateInput(formData.startDate) : null,
+      endDate: formData.endDate ? parseDateInput(formData.endDate) : null
     };
 
     if (isEditing) {
@@ -89,7 +103,30 @@ const TaskModal = ({ isOpen, onClose, task = null }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    let processedValue = value;
+    
+    // Auto-format date inputs
+    if (name === 'startDate' || name === 'endDate') {
+      // Remove all non-digit characters
+      const digits = value.replace(/\D/g, '');
+      
+      // Format as DD/MM/YYYY
+      if (digits.length >= 1) {
+        if (digits.length <= 2) {
+          processedValue = digits;
+        } else if (digits.length <= 4) {
+          processedValue = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+        } else if (digits.length <= 8) {
+          processedValue = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 8)}`;
+        } else {
+          // Limit to 8 digits (DDMMYYYY)
+          processedValue = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 8)}`;
+        }
+      }
+    }
+    
+    setFormData(prev => ({ ...prev, [name]: processedValue }));
     
     // Clear error when user starts typing
     if (errors[name]) {
@@ -157,25 +194,32 @@ const TaskModal = ({ isOpen, onClose, task = null }) => {
                 Start Date
               </label>
               <input
-                type="date"
+                type="text"
                 name="startDate"
                 value={formData.startDate}
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                maxLength="10"
+                className={`w-full p-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 ${
+                  errors.startDate ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                }`}
+                placeholder="DD/MM/YYYY"
               />
+              {errors.startDate && <p className="text-red-500 text-sm mt-1">{errors.startDate}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 End Date
               </label>
               <input
-                type="date"
+                type="text"
                 name="endDate"
                 value={formData.endDate}
                 onChange={handleChange}
+                maxLength="10"
                 className={`w-full p-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 ${
                   errors.endDate ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                 }`}
+                placeholder="DD/MM/YYYY"
               />
               {errors.endDate && <p className="text-red-500 text-sm mt-1">{errors.endDate}</p>}
             </div>
