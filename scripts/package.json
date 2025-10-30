@@ -1,0 +1,14 @@
+{
+  "name": "supabase-data-scripts",
+  "version": "1.0.0",
+  "description": "Scripts to populate Supabase with sample data",
+  "type": "module",
+  "scripts": {
+    "seed": "node seed-data.js",
+    "reset": "node reset-data.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.0",
+    "dotenv": "^16.3.1"
+  }
+}
