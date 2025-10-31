@@ -16,6 +16,7 @@ import TaskModal from './TaskModal';
 import SearchAndFilter from './SearchAndFilter';
 import Header from './Header';
 import TabNavigation from './TabNavigation';
+import { useIsMobile } from '../utils/deviceUtils';
 
 const TaskBoard = () => {
   const { tasks, moveTask } = useTaskStore();
@@ -23,7 +24,9 @@ const TaskBoard = () => {
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [activeTab, setActiveTab] = useState(TASK_STAGES.TODO);
+  const isMobile = useIsMobile();
 
+  // Create sensors - always create them to maintain consistency
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -36,10 +39,12 @@ const TaskBoard = () => {
   );
 
   const handleDragStart = (event) => {
+    if (isMobile) return; // Don't handle drag events on mobile
     setActiveId(event.active.id);
   };
 
   const handleDragOver = (event) => {
+    if (isMobile) return; // Don't handle drag events on mobile
     const { active, over } = event;
     
     if (!over) return;
@@ -56,6 +61,7 @@ const TaskBoard = () => {
   };
 
   const handleDragEnd = (event) => {
+    if (isMobile) return; // Don't handle drag events on mobile
     setActiveId(null);
   };
 
